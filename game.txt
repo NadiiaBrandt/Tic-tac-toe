@@ -1,0 +1,238 @@
+from tkinter import *
+from tkinter import messagebox
+import time
+import random
+import os
+
+
+
+def on_closing():
+    if messagebox.askokcancel("Выход из приложения", "Хотите выйти из приложения?"):
+        window.destroy()
+
+window = Tk()
+window.protocol("WM_DELETE_WINDOW", on_closing)
+window.title("Крестики-нолики")
+window.geometry("700x600+300+200")
+window.resizable(0, 0)
+
+w = 120
+move = 0
+pmove=1
+Btn_list = []
+reclist = []
+wining = [[0, 1, 2], [3, 4, 5], [6, 7, 8], [0, 3, 6], [1, 4, 7], [2, 5, 8], [0, 4, 8], [2, 4, 6]]
+X_num = []
+O_num = []
+cturns=0
+
+fld =['q','q','q','q','q','q','q','q','q']
+
+class pnames():
+    plr1="dummy1"
+    plr2="dummy2"
+    pplr1="dummy1"
+    pplr2="dummy2"
+    w1=0
+    w2=0
+    def inccount(a):
+        if a==0:
+            w1+=1
+        else:
+            w2+=1
+    def resetcount():
+        w1=0
+        w2=0
+    
+pp=pnames()
+
+global players
+
+def updaterecord(d1,d2):
+    f=open("records.rec","a")
+    f.write(d1)
+    f.write(" - ")
+    f.write(str(d2))
+    f.write("\n")
+    f.close()
+    
+def retrieverecord():
+    f=open("records.rec","r")
+    reclist.clear()
+    for x in f:
+        reclist.append(x)
+    f.close()
+        
+
+
+def new_wind_1():
+    global name_1, name_2
+    new_window_1 = Toplevel(window)
+    new_window_1.title("Регистрация")
+    new_window_1.geometry("350x250+535+280")
+    new_window_1.wm_attributes("-topmost", 1)
+    new_window_1.resizable(0, 0)
+    name_1_label = Label(new_window_1, text="Введите имя игрока X:")
+    name_1_label.grid(row=0, column=0)
+    name_1 = Entry(new_window_1)
+    name_1.insert(1,pp.plr1)
+    name_1.grid(row=0, column=1, padx=5, pady=5)
+    name_2_label = Label(new_window_1, text="Введите имя игрока O:")
+    name_2_label.grid(row=1, column=0)
+    name_2 = Entry(new_window_1)
+    name_2.insert(1,pp.plr2)
+    name_2.grid(row=1, column=1, padx=5, pady=5)
+    accept_btn = Button(new_window_1, text="OK", command=setplayernames)
+    accept_btn.place(relx=.5, rely=.4, anchor="c")
+    start_btn = Button(new_window_1, text="Начать игру", command=game)
+    start_btn.place(relx=.5, rely=.6, anchor="c")
+    
+def setplayernames():
+    pp.plr1=name_1.get()
+    pp.plr2=name_2.get()
+    messagebox.showinfo(title="Player names set", message="Player 1: "+pp.plr1+"; Player 2: "+pp.plr2)
+    
+    
+class game_history():
+    def __init__(self):
+        messagebox.showinfo(title="Records", message="Showing Records")
+    def add_item():
+        pp.plr1=name_1.get()
+        pp.plr2=name_2.get()
+    def delete():
+        os.remove("records.rec") 
+    def history():
+        new_window_2 = Toplevel(window)
+        new_window_2.title("Предыдущие партии")
+        new_window_2.geometry("300x250+535+280")
+        new_window_2.wm_attributes("-topmost", 1)
+        retrieverecord()
+        players=Listbox(new_window_2,width=40, selectmode=EXTENDED)
+        for x in reclist:
+            players.insert(1,x)
+        players.pack()
+        scrollbar = Scrollbar(new_window_2)
+        scrollbar.pack(side=RIGHT, fill=Y)
+
+def game():
+    if pp.pplr1!= pp.plr1 or pp.pplr2 != pp.plr2:
+        pp.resetcount;
+    game_window = Tk()
+    game_window.wm_attributes("-topmost", 1)
+    game_window.geometry('360x390+400+300')
+    game_window.title("Крестики-нолики")
+    lbltop = Label(game_window, text="Game in progress: "+pp.plr1+" ("+str(pp.w1)+") vs "+pp.plr2+" ("+str(pp.w2)+")")
+    lbltop.place(x=0, y=360, width=360, height=30)
+      
+    class Btn():
+        global w, Btn_list
+
+        def __init__(self, x0, y0, idd):
+            self.idd = idd
+            self.x0 = x0
+            self.y0 = y0
+            self.Button1 = Button(game_window, bg="white", bd=3, font=("Arial", 24, "bold"), fg='pink')
+            self.Button1.place(x=self.x0, y=self.y0, width=120, height=120)
+            self.Button1.bind("<Button-1>", self.click)
+
+        def unbind1(self, non):
+            self.Button1.unbind("<Button-1>")
+
+        def cfg(self):
+            self.Button1.config(fg='green')
+
+        def show(self):
+            idd = 0
+            x = 0
+            y = 0
+            for i in range(3):
+                for j in range(3):
+                    Btn_list.append(Btn(x, y, idd))
+                    x += w
+                    idd += 1
+                x = 0
+                y += w
+
+        def click(self, non):
+            global move, wining, X_num
+            win = False
+            if move % 2 == 0:
+                char = 'X'
+                X_num.append(self.idd)
+            else:
+                char = '0'
+                O_num.append(self.idd)
+            self.Button1.config(text=char)
+            
+
+            if move % 2 == 0: 
+                k = 0
+                for i in range(8):
+                    for j in range(3):
+                        if wining[i][j] in X_num:
+                            k += 1
+                    if k == 3:
+                        win = True
+                        pp.w1+=1
+                        messagebox.showinfo(title="Victory!", message=pp.plr1+" wins!")
+                        updaterecord(pp.plr1,move)
+                        break
+                    else:
+                        k = 0
+            else:
+                k = 0
+                for i in range(8):
+                    for j in range(3):
+                        if wining[i][j] in O_num:
+                            k += 1
+                    if k == 3:
+                        win = True
+                        pp.w2+=1
+                        messagebox.showinfo(title="Victory!", message=pp.plr2+" wins!")
+                        updaterecord(pp.plr1,move)
+                        break
+                    else:
+                        k = 0 
+
+            if (len(X_num)+len(O_num) == 9):
+               win=True
+               messagebox.showinfo(title="Draw!", message="Match ended in draw") 
+                           
+            self.Button1.unbind("<Button-1>")
+            if win:
+                for g in range(9):
+                    Btn_list[g].unbind1("<Button-1>")
+                for g in range(3):
+                    Btn_list[wining[i][g]].cfg()
+                Btn_list.clear()
+                X_num.clear()
+                O_num.clear()
+                
+                    
+            move += 1
+
+    Btn.show(0)
+
+    game_window.mainloop()
+
+btn1 = Button(
+    text="Играть", background="pink",
+    foreground="purple", padx="20",
+    pady="8", font="15", command=new_wind_1
+)
+btn1.place(relx=.5, rely=.3, anchor="c", height=30, width=130, bordermode=OUTSIDE)
+btn2 = Button(
+    text="История", background="pink",
+    foreground="purple", padx="20",
+    pady="8", font="15", command=game_history.history
+)
+btn2.place(relx=.5, rely=.4, anchor="c", height=30, width=130, bordermode=OUTSIDE)
+btn3 = Button(
+    text="Очистить ист", background="pink",
+    foreground="purple", padx="20",
+    pady="8", font="15", command=game_history.delete
+)
+btn3.place(relx=.5, rely=.5, anchor="c", height=30, width=130, bordermode=OUTSIDE)
+
+window.mainloop()
+
